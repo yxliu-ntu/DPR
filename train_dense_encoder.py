@@ -49,6 +49,7 @@ from dpr.utils.model_utils import (
     get_model_obj,
     load_states_from_checkpoint,
 )
+import git
 
 logger = logging.getLogger()
 setup_logger(logger)
@@ -358,6 +359,7 @@ class BiEncoderTrainer(object):
                 num_other_negatives,
                 shuffle=False,
             )
+            biencoder_input = BiEncoderBatch(**move_to_device(biencoder_input._asdict(), cfg.device))
             total_ctxs = len(ctx_represenations)
             ctxs_ids = biencoder_input.context_ids
             ctxs_segments = biencoder_input.ctx_segments
@@ -782,12 +784,16 @@ def _do_biencoder_fwd_pass(
     if cfg.n_gpu > 1:
         loss = loss.mean()
     if cfg.train.gradient_accumulation_steps > 1:
-        loss = loss / cfg.gradient_accumulation_steps
+        loss = loss / cfg.train.gradient_accumulation_steps
     return loss, is_correct
 
 
 @hydra.main(config_path="conf", config_name="biencoder_train_cfg")
 def main(cfg: DictConfig):
+    repo = git.Repo(search_parent_directories=True)
+    sha = repo.head.object.hexsha
+    logger.info("%s"%sha)
+
     if cfg.train.gradient_accumulation_steps < 1:
         raise ValueError(
             "Invalid gradient_accumulation_steps parameter: {}, should be >= 1".format(

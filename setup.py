@@ -28,6 +28,8 @@ setup(
     ],
     install_requires=[
         "faiss-cpu>=1.6.1",
+        "jsonlines",
+        "gitpython",
         "filelock",
         "numpy",
         "regex",
